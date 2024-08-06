@@ -7,6 +7,7 @@ import android.media.AudioManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -55,6 +56,20 @@ class MainActivity : ComponentActivity() {
         URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/238/original/Way_Maker__0_-_E_-_Original_--_12-Soprano_Vox.m4a"),
         URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/239/original/Way_Maker__0_-_E_-_Original_--_13-Tenor_Vox.m4a"),
         URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/233/original/Way_Maker__0_-_E_-_Original_--_14-Choir.m4a"),
+    )
+
+    // Remove before release build
+    private val audioClicksURLsList: List<URL> = listOf(
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/226/original/Way_Maker__0_-_E_-_Original_--_1-Click.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/226/original/Way_Maker__0_-_E_-_Original_--_1-Click.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/226/original/Way_Maker__0_-_E_-_Original_--_1-Click.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/226/original/Way_Maker__0_-_E_-_Original_--_1-Click.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/226/original/Way_Maker__0_-_E_-_Original_--_1-Click.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/226/original/Way_Maker__0_-_E_-_Original_--_1-Click.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/226/original/Way_Maker__0_-_E_-_Original_--_1-Click.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/226/original/Way_Maker__0_-_E_-_Original_--_1-Click.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/226/original/Way_Maker__0_-_E_-_Original_--_1-Click.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/226/original/Way_Maker__0_-_E_-_Original_--_1-Click.m4a")
     )
 
     private var isMixPaused = false
@@ -165,10 +180,13 @@ class MainActivity : ComponentActivity() {
                         delay(actualStartDelay)
                     }
 
-                    audioTracks.forEach { track ->
+                    audioTracks.forEachIndexed { index, track ->
                         track.player.play()
+                        Log.i(TAG, "Track #${index} started playing")
                         startAmplitudeUpdate(track.fileName)
                     }
+
+                    logTrackTime(audioTracks)
 
                     maxPlaybackDuration = audioTracks.maxOfOrNull { it.player.duration }?.toInt() ?: 0
                     startPlaybackProgressUpdater()
@@ -181,9 +199,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun handleDownloadTracks() {
+    private fun handleDownloadTracks(trackURLs: List<URL>) {
         resetApp()
-        val urls = audioFileURLsList
+        val urls = trackURLs
         val totalFiles = urls.size
         var downloadedFiles = 0
 
@@ -218,12 +236,13 @@ class MainActivity : ComponentActivity() {
         isMixPaused = !isMixPaused
 
         if (isMixPaused) {
-            audioTracks.forEach { track ->
+            audioTracks.forEachIndexed { index, track ->
                 track.player.pause()
+                Log.i(TAG, "Track #${index} paused")
                 pausedTime = track.player.currentPosition.toInt()
                 playerDeviceCurrTime = SystemClock.uptimeMillis()
             }
-            println("All players paused successfully at $pausedTime ms with device time $playerDeviceCurrTime ms")
+            Log.i(TAG, "All players paused successfully at $pausedTime ms with device time $playerDeviceCurrTime ms")
         } else {
             val startDelay: Long = 1000 // Delay to ensure all players are ready
             val startTime = SystemClock.uptimeMillis()
@@ -236,16 +255,22 @@ class MainActivity : ComponentActivity() {
             if (actualStartDelay > 0) {
                 CoroutineScope(Dispatchers.Main).launch {
                     delay(actualStartDelay)
-                    audioTracks.forEach { track ->
+                    audioTracks.forEachIndexed { index, track ->
                         track.player.play()
+                        Log.i(TAG, "Track #${index} resumed")
                         startAmplitudeUpdate(track.fileName)
                     }
+
+                    logTrackTime(audioTracks)
                 }
             } else {
-                audioTracks.forEach { track ->
+                audioTracks.forEachIndexed { index, track ->
                     track.player.play()
+                    Log.i(TAG, "Track #${index} resumed")
                     startAmplitudeUpdate(track.fileName)
                 }
+
+                logTrackTime(audioTracks)
             }
         }
     }
@@ -285,6 +310,9 @@ class MainActivity : ComponentActivity() {
         return try {
             val fileName = url.path.substring(url.path.lastIndexOf('/') + 1)
             val file = File(cacheDir, fileName)
+            if (file.exists() && file.totalSpace > 0)
+                return file
+
             url.openStream().use { input ->
                 file.outputStream().use { output ->
                     input.copyTo(output)
@@ -324,6 +352,33 @@ class MainActivity : ComponentActivity() {
         playbackProgress = progress
     }
 
+    private fun logTrackTime(tracks: List<AudioTrack>) {
+        var firstTrackPosition: Long? = null
+        var firstTrackLogTime: Long? = null
+
+        audioTracks.forEachIndexed { index, track ->
+            val position = track.player.currentPosition
+            val currentTime = System.currentTimeMillis()
+            var logMessage = "Track #$index is at $position. System time is $currentTime."
+
+            if (firstTrackLogTime != null && firstTrackPosition != null) {
+                val positionDesync = position - firstTrackPosition!!
+                val timeDesync = currentTime - firstTrackLogTime!!
+                val totalDesync = positionDesync - timeDesync
+                val totalDesyncString = if (totalDesync > 0)
+                    "+$totalDesync"
+                else totalDesync.toString()
+
+                logMessage += " Desync is at $totalDesyncString."
+            } else {
+                firstTrackPosition = position
+                firstTrackLogTime = currentTime
+            }
+
+            Log.i(TAG, logMessage)
+        }
+    }
+
     @Composable
     fun MainContent(modifier: Modifier = Modifier) {
         Column(
@@ -337,8 +392,11 @@ class MainActivity : ComponentActivity() {
             Button(onClick = { handlePlayMix() }) {
                 Text(text = "Play Mix")
             }
-            Button(onClick = { handleDownloadTracks() }) {
+            Button(onClick = { handleDownloadTracks(audioFileURLsList) }) {
                 Text(text = "Download Tracks")
+            }
+            Button(onClick = { handleDownloadTracks(audioClicksURLsList) }) {
+                Text(text = "Download Clicks 10 times (good for hearing desync)")
             }
             Button(onClick = { handleResumePauseMix() }) {
                 Text(text = "Resume/Pause Mix")
@@ -374,6 +432,8 @@ class MainActivity : ComponentActivity() {
                                 // Adjust pan (left-right balance) here
                                 val leftVolume = if (newPan < 0) 1f else 1 - newPan
                                 val rightVolume = if (newPan > 0) 1f else 1 + newPan
+
+                                // TODO("Add proper pan support")
                                 track.player.setVolume(leftVolume * volume)
                             },
                             valueRange = -1f..1f,
@@ -433,6 +493,10 @@ class MainActivity : ComponentActivity() {
         PolandAndroidArmsTheme {
             Greeting("Android")
         }
+    }
+
+    companion object {
+        val TAG = "player"
     }
 }
 
