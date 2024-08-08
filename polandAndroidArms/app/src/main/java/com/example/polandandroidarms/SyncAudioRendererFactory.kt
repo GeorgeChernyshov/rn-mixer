@@ -2,11 +2,13 @@ package com.example.polandandroidarms
 
 import android.content.Context
 import android.os.Handler
+import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.Renderer
-import androidx.media3.exoplayer.RenderersFactory
 import androidx.media3.exoplayer.audio.AudioRendererEventListener
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.MediaCodecAudioRenderer
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.metadata.MetadataOutput
 import androidx.media3.exoplayer.text.TextOutput
@@ -31,17 +33,18 @@ class SyncAudioRendererFactory(private val context: Context) : DefaultRenderersF
             false,
             false
         )?.let {
-            for (i in 0 until 20) {
-                buildAudioRenderers(
-                    context,
-                    EXTENSION_RENDERER_MODE_OFF,
-                    MediaCodecSelector.DEFAULT,
-                    false,
-                    it,
-                    eventHandler,
-                    audioRendererEventListener,
-                    renderers
+            for (i in 0 until 1) {
+                val audioRenderer = SyncMediaCodecAudioRenderer(
+                    context = context,
+                    codecAdapterFactory = codecAdapterFactory,
+                    mediaCodecSelector = MediaCodecSelector.DEFAULT,
+                    enableDecoderFallback = false,
+                    eventHandler = eventHandler,
+                    eventListener = audioRendererEventListener,
+                    audioSink = it
                 )
+
+                renderers.add(audioRenderer)
             }
         }
 
