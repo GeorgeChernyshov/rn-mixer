@@ -154,65 +154,65 @@ class MainActivity : ComponentActivity() {
             startProgressUpdateTimer()
             isMixBtnClicked = false
 
-//            val latch = CountDownLatch(audioTracks.size)
-//            val scope = CoroutineScope(Dispatchers.IO)
-//            scope.launch {
-//                audioTracks.forEach { track ->
-//                    launch {
-//                        try {
-//                            withContext(Dispatchers.Main) {
-//                                //track.player.setMediaItem(MediaItem.fromUri(Uri.parse(track.fileName)))
-//                                track.player.prepare()
-//                                latch.countDown()
-//                            }
-//                        } catch (e: Exception) {
-//                            e.printStackTrace()
-//                        }
-//                    }
-//                }
-//
-//                latch.await()
-//
-//                withContext(Dispatchers.Main) {
-//                    val startTime = SystemClock.uptimeMillis() + 1000
-//
-//                    audioTracks.forEach { track ->
-//                        track.player.seekTo(0)
-//                    }
-//
-//                    val actualStartDelay = startTime - SystemClock.uptimeMillis()
-//                    if (actualStartDelay > 0) {
-//                        delay(actualStartDelay)
-//                    }
-//
-//                    audioTracks.forEachIndexed { index, track ->
-//                        track.player.play()
-//                        Log.i(TAG, "Track #${index} started playing")
-//                        startAmplitudeUpdate(track.fileName)
-//                    }
-//
-//                    logTrackTime(audioTracks)
-//
-//                    maxPlaybackDuration = audioTracks.maxOfOrNull { it.player.duration }?.toInt() ?: 0
-//                    startPlaybackProgressUpdater()
-//                }
-//            }
+            val latch = CountDownLatch(audioTracks.size)
+            val scope = CoroutineScope(Dispatchers.IO)
+            scope.launch {
+                audioTracks.forEach { track ->
+                    launch {
+                        try {
+                            withContext(Dispatchers.Main) {
+                                //track.player.setMediaItem(MediaItem.fromUri(Uri.parse(track.fileName)))
+                                track.player.prepare()
+                                latch.countDown()
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
 
-            with (audioTracks[0].player) {
-                prepare()
-                val startTime = SystemClock.uptimeMillis() + 1000
-                seekTo(0)
-//                val actualStartDelay = startTime - SystemClock.uptimeMillis()
-//                if (actualStartDelay > 0) {
-//                    delay(actualStartDelay)
-//                }
-                play()
+                latch.await()
 
-                //                    logTrackTime(audioTracks)
+                withContext(Dispatchers.Main) {
+                    val startTime = SystemClock.uptimeMillis() + 1000
 
-                maxPlaybackDuration = duration.toInt()
-                startPlaybackProgressUpdater()
+                    audioTracks.forEach { track ->
+                        track.player.seekTo(0)
+                    }
+
+                    val actualStartDelay = startTime - SystemClock.uptimeMillis()
+                    if (actualStartDelay > 0) {
+                        delay(actualStartDelay)
+                    }
+
+                    audioTracks.forEachIndexed { index, track ->
+                        track.player.play()
+                        Log.i(TAG, "Track #${index} started playing")
+                        startAmplitudeUpdate(track.fileName)
+                    }
+
+                    logTrackTime(audioTracks)
+
+                    maxPlaybackDuration = audioTracks.maxOfOrNull { it.player.duration }?.toInt() ?: 0
+                    startPlaybackProgressUpdater()
+                }
             }
+
+//            with (audioTracks[0].player) {
+//                prepare()
+//                val startTime = SystemClock.uptimeMillis() + 1000
+//                seekTo(0)
+////                val actualStartDelay = startTime - SystemClock.uptimeMillis()
+////                if (actualStartDelay > 0) {
+////                    delay(actualStartDelay)
+////                }
+//                play()
+//
+//                //                    logTrackTime(audioTracks)
+//
+//                maxPlaybackDuration = duration.toInt()
+//                startPlaybackProgressUpdater()
+//            }
 
             isMasterControlShowing = true
         } else {
@@ -232,49 +232,62 @@ class MainActivity : ComponentActivity() {
             val deferreds = urls.map { url ->
                 async {
                     downloadFile(url)?.let { file ->
+//                        withContext(Dispatchers.Main) {
+//                            downloadedFiles += 1
+//                            downloadProgress = downloadedFiles.toDouble() / totalFiles
+//
+//                            return@withContext file
+//                        }
                         withContext(Dispatchers.Main) {
+                            val exoPlayer = ExoPlayer.Builder(this@MainActivity)
+                                .setRenderersFactory(SyncAudioRendererFactory(this@MainActivity))
+                                .build()
+                                .apply {
+                                    setMediaItem(MediaItem.fromUri(Uri.fromFile(file)))
+                                    prepare()
+                                }
+
+                            audioTracks.add(AudioTrack(file.absolutePath, exoPlayer))
+                            getAudioProperties(url)
                             downloadedFiles += 1
                             downloadProgress = downloadedFiles.toDouble() / totalFiles
-
-                            return@withContext file
                         }
                     }
                 }
             }
 
-            val files = deferreds.awaitAll()
-                .filterNotNull()
+            deferreds.awaitAll()
 
             withContext(Dispatchers.Main) {
-                val exoPlayer = ExoPlayer.Builder(this@MainActivity)
-                    .setRenderersFactory(SyncAudioRendererFactory(this@MainActivity))
-                    .setTrackSelector(SyncAudioTrackSelector())
-                    .build()
-                    .apply {
-//                        setMediaItems(files.map { MediaItem.fromUri(Uri.fromFile(it)) })
-                        val dataSourceFactory = DefaultDataSource.Factory(this@MainActivity)
-                        val extractorsFactory = DefaultExtractorsFactory()
-                        val mediaSourceFactory = ProgressiveMediaSource.Factory(
-                            dataSourceFactory,
-                            extractorsFactory
-                        )
-
-                        val mediaItems = files.map { MediaItem.fromUri(Uri.fromFile(it)) }
-                        val list = mediaItems.map {
-                            mediaSourceFactory.createMediaSource(it)
-                        }
-
-                        setMediaSource(MergingMediaSource(true, true, list[5], list[0]))
-//                        setMediaItem(mediaItems[5])
-                        prepare()
-                    }
-
-                files.forEach { file ->
-                    audioTracks.add(AudioTrack(file.absolutePath, exoPlayer))
-                    // Should we get properties from URL?
-                    //getAudioProperties(url)
-                }
-
+//                val exoPlayer = ExoPlayer.Builder(this@MainActivity)
+//                    .setRenderersFactory(SyncAudioRendererFactory(this@MainActivity))
+//                    .setTrackSelector(SyncAudioTrackSelector())
+//                    .build()
+//                    .apply {
+////                        setMediaItems(files.map { MediaItem.fromUri(Uri.fromFile(it)) })
+//                        val dataSourceFactory = DefaultDataSource.Factory(this@MainActivity)
+//                        val extractorsFactory = DefaultExtractorsFactory()
+//                        val mediaSourceFactory = ProgressiveMediaSource.Factory(
+//                            dataSourceFactory,
+//                            extractorsFactory
+//                        )
+//
+//                        val mediaItems = files.map { MediaItem.fromUri(Uri.fromFile(it)) }
+//                        val list = mediaItems.map {
+//                            mediaSourceFactory.createMediaSource(it)
+//                        }
+//
+//                        setMediaSource(MergingMediaSource(true, true, list[5], list[0]))
+////                        setMediaItem(mediaItems[5])
+//                        prepare()
+//                    }
+//
+//                files.forEach { file ->
+//                    audioTracks.add(AudioTrack(file.absolutePath, exoPlayer))
+//                    // Should we get properties from URL?
+//                    //getAudioProperties(url)
+//                }
+//
                 isMixBtnClicked = true
                 downloadProgress = 1.0
             }
