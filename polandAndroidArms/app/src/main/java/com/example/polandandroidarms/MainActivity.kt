@@ -24,7 +24,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.MergingMediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
+import androidx.media3.extractor.DefaultExtractorsFactory
 import com.example.polandandroidarms.ui.theme.PolandAndroidArmsTheme
 import kotlinx.coroutines.*
 import java.io.File
@@ -148,48 +154,64 @@ class MainActivity : ComponentActivity() {
             startProgressUpdateTimer()
             isMixBtnClicked = false
 
-            val latch = CountDownLatch(audioTracks.size)
-            val scope = CoroutineScope(Dispatchers.IO)
-            scope.launch {
-                audioTracks.forEach { track ->
-                    launch {
-                        try {
-                            withContext(Dispatchers.Main) {
-                                track.player.setMediaItem(MediaItem.fromUri(Uri.parse(track.fileName)))
-                                track.player.prepare()
-                                latch.countDown()
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                    }
-                }
+//            val latch = CountDownLatch(audioTracks.size)
+//            val scope = CoroutineScope(Dispatchers.IO)
+//            scope.launch {
+//                audioTracks.forEach { track ->
+//                    launch {
+//                        try {
+//                            withContext(Dispatchers.Main) {
+//                                //track.player.setMediaItem(MediaItem.fromUri(Uri.parse(track.fileName)))
+//                                track.player.prepare()
+//                                latch.countDown()
+//                            }
+//                        } catch (e: Exception) {
+//                            e.printStackTrace()
+//                        }
+//                    }
+//                }
+//
+//                latch.await()
+//
+//                withContext(Dispatchers.Main) {
+//                    val startTime = SystemClock.uptimeMillis() + 1000
+//
+//                    audioTracks.forEach { track ->
+//                        track.player.seekTo(0)
+//                    }
+//
+//                    val actualStartDelay = startTime - SystemClock.uptimeMillis()
+//                    if (actualStartDelay > 0) {
+//                        delay(actualStartDelay)
+//                    }
+//
+//                    audioTracks.forEachIndexed { index, track ->
+//                        track.player.play()
+//                        Log.i(TAG, "Track #${index} started playing")
+//                        startAmplitudeUpdate(track.fileName)
+//                    }
+//
+//                    logTrackTime(audioTracks)
+//
+//                    maxPlaybackDuration = audioTracks.maxOfOrNull { it.player.duration }?.toInt() ?: 0
+//                    startPlaybackProgressUpdater()
+//                }
+//            }
 
-                latch.await()
+            with (audioTracks[0].player) {
+                prepare()
+                val startTime = SystemClock.uptimeMillis() + 1000
+                seekTo(0)
+//                val actualStartDelay = startTime - SystemClock.uptimeMillis()
+//                if (actualStartDelay > 0) {
+//                    delay(actualStartDelay)
+//                }
+                play()
 
-                withContext(Dispatchers.Main) {
-                    val startTime = SystemClock.uptimeMillis() + 1000
+                //                    logTrackTime(audioTracks)
 
-                    audioTracks.forEach { track ->
-                        track.player.seekTo(0)
-                    }
-
-                    val actualStartDelay = startTime - SystemClock.uptimeMillis()
-                    if (actualStartDelay > 0) {
-                        delay(actualStartDelay)
-                    }
-
-                    audioTracks.forEachIndexed { index, track ->
-                        track.player.play()
-                        Log.i(TAG, "Track #${index} started playing")
-                        startAmplitudeUpdate(track.fileName)
-                    }
-
-                    logTrackTime(audioTracks)
-
-                    maxPlaybackDuration = audioTracks.maxOfOrNull { it.player.duration }?.toInt() ?: 0
-                    startPlaybackProgressUpdater()
-                }
+                maxPlaybackDuration = duration.toInt()
+                startPlaybackProgressUpdater()
             }
 
             isMasterControlShowing = true
@@ -198,6 +220,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     private fun handleDownloadTracks(trackURLs: List<URL>) {
         resetApp()
         val urls = trackURLs
@@ -210,20 +233,48 @@ class MainActivity : ComponentActivity() {
                 async {
                     downloadFile(url)?.let { file ->
                         withContext(Dispatchers.Main) {
-                            val exoPlayer = ExoPlayer.Builder(this@MainActivity).build().apply {
-                                setMediaItem(MediaItem.fromUri(Uri.fromFile(file)))
-                                prepare()
-                            }
-                            audioTracks.add(AudioTrack(file.absolutePath, exoPlayer))
-                            getAudioProperties(url)
                             downloadedFiles += 1
                             downloadProgress = downloadedFiles.toDouble() / totalFiles
+
+                            return@withContext file
                         }
                     }
                 }
             }
-            deferreds.awaitAll()
+
+            val files = deferreds.awaitAll()
+                .filterNotNull()
+
             withContext(Dispatchers.Main) {
+                val exoPlayer = ExoPlayer.Builder(this@MainActivity)
+                    .setRenderersFactory(SyncAudioRendererFactory(this@MainActivity))
+                    .setTrackSelector(SyncAudioTrackSelector())
+                    .build()
+                    .apply {
+//                        setMediaItems(files.map { MediaItem.fromUri(Uri.fromFile(it)) })
+                        val dataSourceFactory = DefaultDataSource.Factory(this@MainActivity)
+                        val extractorsFactory = DefaultExtractorsFactory()
+                        val mediaSourceFactory = ProgressiveMediaSource.Factory(
+                            dataSourceFactory,
+                            extractorsFactory
+                        )
+
+                        val mediaItems = files.map { MediaItem.fromUri(Uri.fromFile(it)) }
+                        val list = mediaItems.map {
+                            mediaSourceFactory.createMediaSource(it)
+                        }
+
+                        setMediaSource(MergingMediaSource(true, true, list[5], list[0]))
+//                        setMediaItem(mediaItems[5])
+                        prepare()
+                    }
+
+                files.forEach { file ->
+                    audioTracks.add(AudioTrack(file.absolutePath, exoPlayer))
+                    // Should we get properties from URL?
+                    //getAudioProperties(url)
+                }
+
                 isMixBtnClicked = true
                 downloadProgress = 1.0
             }
@@ -355,7 +406,7 @@ class MainActivity : ComponentActivity() {
         var firstTrackPosition: Long? = null
         var firstTrackLogTime: Long? = null
 
-        audioTracks.forEachIndexed { index, track ->
+        tracks.forEachIndexed { index, track ->
             val position = track.player.currentPosition
             val currentTime = System.currentTimeMillis()
             var logMessage = "Track #$index is at $position. System time is $currentTime."
