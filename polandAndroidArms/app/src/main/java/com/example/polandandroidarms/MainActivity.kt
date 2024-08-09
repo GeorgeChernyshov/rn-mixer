@@ -2,7 +2,6 @@ package com.example.polandandroidarms
 
 import android.content.Context
 import android.content.Intent
-import android.media.AudioAttributes
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Bundle
@@ -24,18 +23,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
-import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.MergingMediaSource
+import androidx.media3.exoplayer.Renderer
+import androidx.media3.exoplayer.audio.MediaCodecAudioRenderer
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
-import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
+import androidx.media3.exoplayer.upstream.DefaultAllocator
 import androidx.media3.extractor.DefaultExtractorsFactory
 import com.example.polandandroidarms.ui.theme.PolandAndroidArmsTheme
 import kotlinx.coroutines.*
 import java.io.File
 import java.net.URL
-import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicLong
+
 
 data class AudioTrack(
     val fileName: String,
@@ -44,7 +46,8 @@ data class AudioTrack(
     var pan: Float = 0.0f     // Default pan (0 is centered)
 )
 
-class MainActivity : ComponentActivity() {
+@UnstableApi
+class MainActivity : ComponentActivity(), PlayableInputStream.GetAvailableBytes {
 
     private val audioFileURLsList: List<URL> = listOf(
         URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/236/original/Way_Maker__0_-_E_-_Original_--_11-Lead_Vox.m4a"),
@@ -80,6 +83,11 @@ class MainActivity : ComponentActivity() {
     private var isMixPaused = false
     private var pausedTime = 0
     private var playerDeviceCurrTime = 0L
+    private var dataSource: DataSource? = null
+    private var progressiveMediaSource: ProgressiveMediaSource? = null
+    private var renderer: Renderer? = null
+    private var file: File? = null
+    private var _availableBytes = AtomicLong(0)
 
     private val pickAudioFileLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
@@ -145,6 +153,9 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override val availableBytes
+        get() = _availableBytes.get().coerceAtMost(file?.length() ?: 0)
 
     private fun handlePlayMix() {
         if (requestAudioFocus()) {
@@ -252,7 +263,38 @@ class MainActivity : ComponentActivity() {
                     .build()
                     .apply {
 //                        setMediaItems(files.map { MediaItem.fromUri(Uri.fromFile(it)) })
-                        val dataSourceFactory = DefaultDataSource.Factory(this@MainActivity)
+//                        val dataSourceFactory = DefaultDataSource.Factory(this@MainActivity)
+//                        val extractorsFactory = DefaultExtractorsFactory()
+//                        val mediaSourceFactory = ProgressiveMediaSource.Factory(
+//                            dataSourceFactory,
+//                            extractorsFactory
+//                        )
+//
+//                        val mediaItems = files.map { MediaItem.fromUri(Uri.fromFile(it)) }
+//                        val list = mediaItems.map {
+//                            mediaSourceFactory.createMediaSource(it)
+//                        }
+//
+//                        setMediaSource(MergingMediaSource(true, true, list[5], list[0]))
+//                        setMediaItem(mediaItems[5])
+//                        prepare()
+
+                        /*instantiate myDataSource*/
+//                        dataSource = StreamDataSource(this@MainActivity)
+//
+//                        progressiveMediaSource = ProgressiveMediaSource.Factory(
+//                            Uri.parse("song.mp3"),
+//                            dataSource,
+//                            DefaultAllocator(64 * 1024),
+//                            64 * 1024 * 256
+//                        )
+//                        renderer = MediaCodecAudioRenderer(extractorSampleSource, null, true)
+
+                        val dataSourceFactory = DataSource.Factory {
+                            StreamDataSource(this@MainActivity)
+                        }
+//                        val dataSourceFactory = DefaultDataSource.Factory(this@MainActivity)
+
                         val extractorsFactory = DefaultExtractorsFactory()
                         val mediaSourceFactory = ProgressiveMediaSource.Factory(
                             dataSourceFactory,
@@ -260,12 +302,14 @@ class MainActivity : ComponentActivity() {
                         )
 
                         val mediaItems = files.map { MediaItem.fromUri(Uri.fromFile(it)) }
+
                         val list = mediaItems.map {
                             mediaSourceFactory.createMediaSource(it)
                         }
 
-                        setMediaSource(MergingMediaSource(true, true, list[5], list[0]))
-//                        setMediaItem(mediaItems[5])
+                        setMediaSource(list.first())
+
+                        /*prepare ExoPlayer*/
                         prepare()
                     }
 
