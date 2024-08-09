@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.MergingMediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
@@ -239,8 +240,19 @@ class MainActivity : ComponentActivity() {
 //                            return@withContext file
 //                        }
                         withContext(Dispatchers.Main) {
+                            val STD_BUFFER = 32
                             val exoPlayer = ExoPlayer.Builder(this@MainActivity)
                                 .setRenderersFactory(SyncAudioRendererFactory(this@MainActivity))
+                                .setLoadControl(
+                                    DefaultLoadControl.Builder()
+                                        .setBufferDurationsMs(
+                                            32*STD_BUFFER,
+                                            64*STD_BUFFER,
+                                            STD_BUFFER,
+                                            STD_BUFFER
+                                        )
+                                        .build()
+                                )
                                 .build()
                                 .apply {
                                     setMediaItem(MediaItem.fromUri(Uri.fromFile(file)))
