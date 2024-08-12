@@ -8,11 +8,13 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.audio.AudioRendererEventListener
 import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.MediaCodecAudioRenderer
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.metadata.MetadataOutput
 import androidx.media3.exoplayer.text.TextOutput
 import androidx.media3.exoplayer.video.VideoRendererEventListener
+import com.example.polandandroidarms.audiosink.LowLatencyAudioSink
 
 @UnstableApi
 class SyncAudioRendererFactory(private val context: Context) : DefaultRenderersFactory(context) {
@@ -28,7 +30,7 @@ class SyncAudioRendererFactory(private val context: Context) : DefaultRenderersF
 
         val renderers: ArrayList<Renderer> = ArrayList()
 
-        super.buildAudioSink(
+        buildAudioSink(
             context,
             false,
             false
@@ -49,5 +51,16 @@ class SyncAudioRendererFactory(private val context: Context) : DefaultRenderersF
         }
 
         return renderers.toTypedArray()
+    }
+
+    override fun buildAudioSink(
+        context: Context,
+        enableFloatOutput: Boolean,
+        enableAudioTrackPlaybackParams: Boolean
+    ): AudioSink {
+        return LowLatencyAudioSink.Builder(context)
+            .setEnableFloatOutput(enableFloatOutput)
+            .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+            .build()
     }
 }
