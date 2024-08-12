@@ -57,6 +57,9 @@ public:
     void triggerDown(int32_t index);
     void triggerUp(int32_t index);
 
+    void pause();
+    void resume();
+
     void resetAll();
 
     bool getOutputReset() { return mOutputReset; }

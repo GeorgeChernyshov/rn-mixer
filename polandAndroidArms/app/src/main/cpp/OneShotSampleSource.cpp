@@ -70,4 +70,20 @@ void OneShotSampleSource::mixAudio(float* outBuff, int numChannels, int32_t numF
     // to be mixed into
 }
 
+float OneShotSampleSource::getPosition() {
+    auto current = static_cast<float>(mCurSampleIndex);
+    auto total = static_cast<float>(mSampleBuffer->getNumSamples());
+
+    return current / total;
+}
+
+void OneShotSampleSource::setPosition(float position) {
+    auto total = static_cast<float>(mSampleBuffer->getNumSamples());
+    auto newPosition = static_cast<int>(position * total);
+    if (newPosition % 2 == 1)
+        newPosition--;
+
+    mCurSampleIndex = newPosition;
+}
+
 } // namespace wavlib

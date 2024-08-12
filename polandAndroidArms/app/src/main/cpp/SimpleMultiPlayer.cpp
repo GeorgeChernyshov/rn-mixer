@@ -195,6 +195,14 @@ void SimpleMultiPlayer::triggerUp(int32_t index) {
     }
 }
 
+void SimpleMultiPlayer::pause() {
+    mAudioStream->pause();
+}
+
+void SimpleMultiPlayer::resume() {
+    mAudioStream->start();
+}
+
 void SimpleMultiPlayer::resetAll() {
     for (int32_t bufferIndex = 0; bufferIndex < mNumSampleBuffers; bufferIndex++) {
         mSampleSources[bufferIndex]->setStopMode();

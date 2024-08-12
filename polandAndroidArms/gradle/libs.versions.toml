@@ -1,5 +1,6 @@
 [versions]
 agp = "8.4.1"
+ffmpegKitFull = "4.5.1-1"
 kotlin = "1.9.0"
 coreKtx = "1.10.1"
 junit = "4.13.2"
@@ -13,6 +14,7 @@ oboe = "1.9.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+ffmpeg-kit-full = { module = "com.arthenica:ffmpeg-kit-full", version.ref = "ffmpegKitFull" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

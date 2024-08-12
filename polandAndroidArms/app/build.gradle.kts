@@ -88,6 +88,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.com.google.oboe)
+    implementation(libs.ffmpeg.kit.full)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
