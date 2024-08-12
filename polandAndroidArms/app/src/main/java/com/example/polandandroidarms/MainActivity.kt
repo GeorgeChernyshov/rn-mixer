@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.MergingMediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
@@ -34,6 +35,7 @@ import androidx.media3.extractor.DefaultExtractorsFactory
 import com.example.polandandroidarms.ui.theme.PolandAndroidArmsTheme
 import kotlinx.coroutines.*
 import java.io.File
+import java.io.FileInputStream
 import java.net.URL
 import java.util.concurrent.CountDownLatch
 
@@ -47,20 +49,20 @@ data class AudioTrack(
 class MainActivity : ComponentActivity() {
 
     private val audioFileURLsList: List<URL> = listOf(
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/236/original/Way_Maker__0_-_E_-_Original_--_11-Lead_Vox.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/227/original/Way_Maker__0_-_E_-_Original_--_3-Drums.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/229/original/Way_Maker__0_-_E_-_Original_--_4-Percussion.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/232/original/Way_Maker__0_-_E_-_Original_--_5-Bass.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/230/original/Way_Maker__0_-_E_-_Original_--_6-Acoustic.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/226/original/Way_Maker__0_-_E_-_Original_--_1-Click.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/236/original/Way_Maker__0_-_E_-_Original_--_11-Lead_Vox.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/227/original/Way_Maker__0_-_E_-_Original_--_3-Drums.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/229/original/Way_Maker__0_-_E_-_Original_--_4-Percussion.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/232/original/Way_Maker__0_-_E_-_Original_--_5-Bass.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/230/original/Way_Maker__0_-_E_-_Original_--_6-Acoustic.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/226/original/Way_Maker__0_-_E_-_Original_--_1-Click.m4a"),
         URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/228/original/Way_Maker__0_-_E_-_Original_--_2-Guide.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/234/original/Way_Maker__0_-_E_-_Original_--_7-Electric_1.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/235/original/Way_Maker__0_-_E_-_Original_--_8-Electric_2.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/237/original/Way_Maker__0_-_E_-_Original_--_9-Main_Keys.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/231/original/Way_Maker__0_-_E_-_Original_--_10-Aux_Keys.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/238/original/Way_Maker__0_-_E_-_Original_--_12-Soprano_Vox.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/239/original/Way_Maker__0_-_E_-_Original_--_13-Tenor_Vox.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/233/original/Way_Maker__0_-_E_-_Original_--_14-Choir.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/234/original/Way_Maker__0_-_E_-_Original_--_7-Electric_1.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/235/original/Way_Maker__0_-_E_-_Original_--_8-Electric_2.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/237/original/Way_Maker__0_-_E_-_Original_--_9-Main_Keys.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/231/original/Way_Maker__0_-_E_-_Original_--_10-Aux_Keys.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/238/original/Way_Maker__0_-_E_-_Original_--_12-Soprano_Vox.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/239/original/Way_Maker__0_-_E_-_Original_--_13-Tenor_Vox.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/233/original/Way_Maker__0_-_E_-_Original_--_14-Choir.m4a"),
     )
 
     // Remove before release build
@@ -106,6 +108,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    init {
+        System.loadLibrary("sound")
+    }
+
+    external fun testFunction(): Long
+    external fun playAudio()
+
     private fun requestAudioFocus(): Boolean {
         val result = audioManager.requestAudioFocus(
             audioFocusChangeListener,
@@ -147,6 +156,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handlePlayMix() {
+//        playAudio()
         if (requestAudioFocus()) {
             // Move to a foreground service if needed
             startService(Intent(this, AudioPlaybackService::class.java))
@@ -154,65 +164,65 @@ class MainActivity : ComponentActivity() {
             startProgressUpdateTimer()
             isMixBtnClicked = false
 
-//            val latch = CountDownLatch(audioTracks.size)
-//            val scope = CoroutineScope(Dispatchers.IO)
-//            scope.launch {
-//                audioTracks.forEach { track ->
-//                    launch {
-//                        try {
-//                            withContext(Dispatchers.Main) {
-//                                //track.player.setMediaItem(MediaItem.fromUri(Uri.parse(track.fileName)))
-//                                track.player.prepare()
-//                                latch.countDown()
-//                            }
-//                        } catch (e: Exception) {
-//                            e.printStackTrace()
-//                        }
-//                    }
-//                }
-//
-//                latch.await()
-//
-//                withContext(Dispatchers.Main) {
-//                    val startTime = SystemClock.uptimeMillis() + 1000
-//
-//                    audioTracks.forEach { track ->
-//                        track.player.seekTo(0)
-//                    }
-//
-//                    val actualStartDelay = startTime - SystemClock.uptimeMillis()
-//                    if (actualStartDelay > 0) {
-//                        delay(actualStartDelay)
-//                    }
-//
-//                    audioTracks.forEachIndexed { index, track ->
-//                        track.player.play()
-//                        Log.i(TAG, "Track #${index} started playing")
-//                        startAmplitudeUpdate(track.fileName)
-//                    }
-//
-//                    logTrackTime(audioTracks)
-//
-//                    maxPlaybackDuration = audioTracks.maxOfOrNull { it.player.duration }?.toInt() ?: 0
-//                    startPlaybackProgressUpdater()
-//                }
-//            }
+            val latch = CountDownLatch(audioTracks.size)
+            val scope = CoroutineScope(Dispatchers.IO)
+            scope.launch {
+                audioTracks.forEach { track ->
+                    launch {
+                        try {
+                            withContext(Dispatchers.Main) {
+                                //track.player.setMediaItem(MediaItem.fromUri(Uri.parse(track.fileName)))
+                                track.player.prepare()
+                                latch.countDown()
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
 
-            with (audioTracks[0].player) {
-                prepare()
-                val startTime = SystemClock.uptimeMillis() + 1000
-                seekTo(0)
-//                val actualStartDelay = startTime - SystemClock.uptimeMillis()
-//                if (actualStartDelay > 0) {
-//                    delay(actualStartDelay)
-//                }
-                play()
+                latch.await()
 
-                //                    logTrackTime(audioTracks)
+                withContext(Dispatchers.Main) {
+                    val startTime = SystemClock.uptimeMillis() + 1000
 
-                maxPlaybackDuration = duration.toInt()
-                startPlaybackProgressUpdater()
+                    audioTracks.forEach { track ->
+                        track.player.seekTo(0)
+                    }
+
+                    val actualStartDelay = startTime - SystemClock.uptimeMillis()
+                    if (actualStartDelay > 0) {
+                        delay(actualStartDelay)
+                    }
+
+                    audioTracks.forEachIndexed { index, track ->
+                        track.player.play()
+                        Log.i(TAG, "Track #${index} started playing")
+                        startAmplitudeUpdate(track.fileName)
+                    }
+
+                    logTrackTime(audioTracks)
+
+                    maxPlaybackDuration = audioTracks.maxOfOrNull { it.player.duration }?.toInt() ?: 0
+                    startPlaybackProgressUpdater()
+                }
             }
+
+//            with (audioTracks[0].player) {
+//                prepare()
+//                val startTime = SystemClock.uptimeMillis() + 1000
+//                seekTo(0)
+////                val actualStartDelay = startTime - SystemClock.uptimeMillis()
+////                if (actualStartDelay > 0) {
+////                    delay(actualStartDelay)
+////                }
+//                play()
+//
+//                //                    logTrackTime(audioTracks)
+//
+//                maxPlaybackDuration = duration.toInt()
+//                startPlaybackProgressUpdater()
+//            }
 
             isMasterControlShowing = true
         } else {
@@ -232,49 +242,43 @@ class MainActivity : ComponentActivity() {
             val deferreds = urls.map { url ->
                 async {
                     downloadFile(url)?.let { file ->
-                        withContext(Dispatchers.Main) {
-                            downloadedFiles += 1
-                            downloadProgress = downloadedFiles.toDouble() / totalFiles
-
-                            return@withContext file
-                        }
+                        val byteArray = file.readBytes()
                     }
                 }
             }
 
-            val files = deferreds.awaitAll()
-                .filterNotNull()
+            deferreds.awaitAll()
 
             withContext(Dispatchers.Main) {
-                val exoPlayer = ExoPlayer.Builder(this@MainActivity)
-                    .setRenderersFactory(SyncAudioRendererFactory(this@MainActivity))
-                    .setTrackSelector(SyncAudioTrackSelector())
-                    .build()
-                    .apply {
-//                        setMediaItems(files.map { MediaItem.fromUri(Uri.fromFile(it)) })
-                        val dataSourceFactory = DefaultDataSource.Factory(this@MainActivity)
-                        val extractorsFactory = DefaultExtractorsFactory()
-                        val mediaSourceFactory = ProgressiveMediaSource.Factory(
-                            dataSourceFactory,
-                            extractorsFactory
-                        )
-
-                        val mediaItems = files.map { MediaItem.fromUri(Uri.fromFile(it)) }
-                        val list = mediaItems.map {
-                            mediaSourceFactory.createMediaSource(it)
-                        }
-
-                        setMediaSource(MergingMediaSource(true, true, list[5], list[0]))
-//                        setMediaItem(mediaItems[5])
-                        prepare()
-                    }
-
-                files.forEach { file ->
-                    audioTracks.add(AudioTrack(file.absolutePath, exoPlayer))
-                    // Should we get properties from URL?
-                    //getAudioProperties(url)
-                }
-
+//                val exoPlayer = ExoPlayer.Builder(this@MainActivity)
+//                    .setRenderersFactory(SyncAudioRendererFactory(this@MainActivity))
+//                    .setTrackSelector(SyncAudioTrackSelector())
+//                    .build()
+//                    .apply {
+////                        setMediaItems(files.map { MediaItem.fromUri(Uri.fromFile(it)) })
+//                        val dataSourceFactory = DefaultDataSource.Factory(this@MainActivity)
+//                        val extractorsFactory = DefaultExtractorsFactory()
+//                        val mediaSourceFactory = ProgressiveMediaSource.Factory(
+//                            dataSourceFactory,
+//                            extractorsFactory
+//                        )
+//
+//                        val mediaItems = files.map { MediaItem.fromUri(Uri.fromFile(it)) }
+//                        val list = mediaItems.map {
+//                            mediaSourceFactory.createMediaSource(it)
+//                        }
+//
+//                        setMediaSource(MergingMediaSource(true, true, list[5], list[0]))
+////                        setMediaItem(mediaItems[5])
+//                        prepare()
+//                    }
+//
+//                files.forEach { file ->
+//                    audioTracks.add(AudioTrack(file.absolutePath, exoPlayer))
+//                    // Should we get properties from URL?
+//                    //getAudioProperties(url)
+//                }
+//
                 isMixBtnClicked = true
                 downloadProgress = 1.0
             }
@@ -445,16 +449,16 @@ class MainActivity : ComponentActivity() {
             Button(onClick = { handleDownloadTracks(audioFileURLsList) }) {
                 Text(text = "Download Tracks")
             }
-            Button(onClick = { handleDownloadTracks(audioClicksURLsList) }) {
-                Text(text = "Download Clicks 10 times (good for hearing desync)")
-            }
-            Button(onClick = { handleResumePauseMix() }) {
-                Text(text = "Resume/Pause Mix")
-            }
-            Button(onClick = { handlePickAudioMix() }) {
-                Text(text = "Pick Audio Mix")
-            }
-            Text(text = "Download Progress: ${(downloadProgress * 100).toInt()}%")
+//            Button(onClick = { handleDownloadTracks(audioClicksURLsList) }) {
+//                Text(text = "Download Clicks 10 times (good for hearing desync)")
+//            }
+//            Button(onClick = { handleResumePauseMix() }) {
+//                Text(text = "Resume/Pause Mix")
+//            }
+//            Button(onClick = { handlePickAudioMix() }) {
+//                Text(text = "Pick Audio Mix")
+//            }
+//            Text(text = "Download Progress: ${(downloadProgress * 100).toInt()}%")
 
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 itemsIndexed(audioTracks) { index, track ->

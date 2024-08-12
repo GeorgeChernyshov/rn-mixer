@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.util.archivesName
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -6,6 +8,7 @@ plugins {
 android {
     namespace = "com.example.polandandroidarms"
     compileSdk = 34
+    ndkVersion = "22.1.7171670"
 
     defaultConfig {
         applicationId = "com.example.polandandroidarms"
@@ -13,10 +16,26 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+        archivesName = "exoplayer_shared_clock"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
+        }
+        externalNativeBuild {
+            cmake {
+                cppFlags("-std=c++17")
+                arguments("-DANDROID_STL=c++_shared")
+            }
+        }
+    }
+
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("../../../../Keystore/debug.jks")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
         }
     }
 
@@ -27,6 +46,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -37,10 +58,17 @@ android {
         jvmTarget = "1.8"
     }
     buildFeatures {
+        prefab = true
         compose = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
+    }
+    externalNativeBuild {
+        cmake {
+            version = "3.18.1"
+            path = File("src/main/cpp/CMakeLists.txt")
+        }
     }
     packaging {
         resources {
@@ -59,6 +87,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.com.google.oboe)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
