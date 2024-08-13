@@ -6,6 +6,7 @@ add_library (
         SHARED
         sound.cpp
         bridge.cpp
+        FileSource.cpp
         OneShotSampleSource.cpp
         SampleBuffer.cpp
         SampleSource.cpp

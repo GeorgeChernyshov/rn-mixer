@@ -3,12 +3,14 @@
 
 #include "sound.h"
 #include "SimpleMultiPlayer.h"
-#include "stream/MemInputStream.h"
+#include "stream/FileInputStream.h"
 #include "m4a/M4aStreamReader.h"
 #include "SampleBuffer.h"
 #include "SampleSource.h"
 
 #include "vector"
+#include "fstream"
+#include <fcntl.h>
 
 static iolib::SimpleMultiPlayer sPlayer;
 static std::vector<iolib::SampleBuffer*> buffers;
@@ -28,17 +30,11 @@ Java_com_example_polandandroidarms_MainActivity_preparePlayer(JNIEnv *env, jobje
 }
 
 extern "C"
-JNIEXPORT void JNICALL
+JNIEXPORT jint JNICALL
 Java_com_example_polandandroidarms_MainActivity_loadTrack(JNIEnv *env, jobject thiz,
-                                                          jbyteArray data) {
-    jboolean isCopy;
-    auto stream = parselib::MemInputStream(
-            reinterpret_cast<unsigned char *>(
-                    env->GetByteArrayElements(data, &isCopy)
-                    ),
-            env->GetArrayLength(data)
-            );
-
+                                                          jstring fileName) {
+    auto f = open(env->GetStringUTFChars(fileName, 0), O_RDONLY);
+    auto stream = parselib::FileInputStream(f);
     auto reader = parselib::M4aStreamReader(&stream);
     reader.parse();
     auto buffer = new iolib::SampleBuffer();
@@ -47,6 +43,8 @@ Java_com_example_polandandroidarms_MainActivity_loadTrack(JNIEnv *env, jobject t
     auto source = new iolib::OneShotSampleSource(buffer, 1);
     sources.push_back(source);
     sPlayer.addSampleSource(source, buffer);
+
+    return buffers.size() - 1;
 }
 
 extern "C"
@@ -90,4 +88,18 @@ Java_com_example_polandandroidarms_MainActivity_setPosition(JNIEnv *env, jobject
     }
 
     sPlayer.resume();
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_polandandroidarms_MainActivity_setTrackVolume(JNIEnv *env, jobject thiz,
+                                                               jint track_num, jfloat volume) {
+    sources[track_num]->setGain(volume);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_polandandroidarms_MainActivity_setTrackPan(JNIEnv *env, jobject thiz,
+                                                            jint track_num, jfloat pan) {
+    sources[track_num]->setPan(pan);
 }

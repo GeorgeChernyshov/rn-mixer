@@ -54,7 +54,7 @@ import java.net.URL
 
 data class AudioTrack(
     val fileName: String,
-//    val player: ExoPlayer,
+    val internalTrackNumber: Int,
     var volume: Float = 1.0f, // Default volume
     var pan: Float = 0.0f     // Default pan (0 is centered)
 )
@@ -62,16 +62,16 @@ data class AudioTrack(
 class MainActivity : ComponentActivity() {
 
     private val audioFileURLsList: List<URL> = listOf(
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/236/original/Way_Maker__0_-_E_-_Original_--_11-Lead_Vox.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/227/original/Way_Maker__0_-_E_-_Original_--_3-Drums.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/229/original/Way_Maker__0_-_E_-_Original_--_4-Percussion.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/232/original/Way_Maker__0_-_E_-_Original_--_5-Bass.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/230/original/Way_Maker__0_-_E_-_Original_--_6-Acoustic.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/236/original/Way_Maker__0_-_E_-_Original_--_11-Lead_Vox.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/227/original/Way_Maker__0_-_E_-_Original_--_3-Drums.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/229/original/Way_Maker__0_-_E_-_Original_--_4-Percussion.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/232/original/Way_Maker__0_-_E_-_Original_--_5-Bass.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/230/original/Way_Maker__0_-_E_-_Original_--_6-Acoustic.m4a"),
         URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/226/original/Way_Maker__0_-_E_-_Original_--_1-Click.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/228/original/Way_Maker__0_-_E_-_Original_--_2-Guide.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/234/original/Way_Maker__0_-_E_-_Original_--_7-Electric_1.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/235/original/Way_Maker__0_-_E_-_Original_--_8-Electric_2.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/237/original/Way_Maker__0_-_E_-_Original_--_9-Main_Keys.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/228/original/Way_Maker__0_-_E_-_Original_--_2-Guide.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/234/original/Way_Maker__0_-_E_-_Original_--_7-Electric_1.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/235/original/Way_Maker__0_-_E_-_Original_--_8-Electric_2.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/237/original/Way_Maker__0_-_E_-_Original_--_9-Main_Keys.m4a"),
 //        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/231/original/Way_Maker__0_-_E_-_Original_--_10-Aux_Keys.m4a"),
 //        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/238/original/Way_Maker__0_-_E_-_Original_--_12-Soprano_Vox.m4a"),
 //        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/239/original/Way_Maker__0_-_E_-_Original_--_13-Tenor_Vox.m4a"),
@@ -127,12 +127,14 @@ class MainActivity : ComponentActivity() {
 
     external fun testFunction(): Long
     external fun preparePlayer();
-    external fun loadTrack(data: ByteArray)
+    external fun loadTrack(fileName: String): Int
     external fun playAudio()
     external fun pauseAudio()
     external fun resumeAudio()
     external fun getCurrentPosition(): Float
     external fun setPosition(position: Float)
+    external fun setTrackVolume(trackNum: Int, volume: Float)
+    external fun setTrackPan(trackNum: Int, pan: Float)
 
     private fun requestAudioFocus(): Boolean {
         val result = audioManager.requestAudioFocus(
@@ -201,30 +203,30 @@ class MainActivity : ComponentActivity() {
             val deferreds = urls.map { url ->
 //                async {
                     downloadFile(url)?.let { file ->
-                        addTrack(file)
-//                        val i = file.name.lastIndexOf('.')
-//                        val substr = file.name.substring(0, i)
-//                        val outputFile = File(file.parent, "$substr.wav")
-//                        if (outputFile.exists() && outputFile.totalSpace > 0) {
-//                            addTrack(outputFile)
-//                        } else {
-//                            val session = FFmpegKit.execute("-i $file $outputFile")
-//                            if (ReturnCode.isSuccess(session.returnCode)) {
-//                                addTrack(outputFile)
-//                            } else if (ReturnCode.isCancel(session.returnCode)) {
-//                                // CANCEL
-//                            } else {
-//                                Log.d(
-//                                    TAG,
-//                                    String.format(
-//                                        "Command failed with state %s and rc %s.%s",
-//                                        session.state,
-//                                        session.returnCode,
-//                                        session.failStackTrace
-//                                    )
-//                                )
-//                            }
-//                        }
+//                        addTrack(file)
+                        val i = file.name.lastIndexOf('.')
+                        val substr = file.name.substring(0, i)
+                        val outputFile = File(file.parent, "$substr.wav")
+                        if (outputFile.exists() && outputFile.totalSpace > 0) {
+                            addTrack(outputFile)
+                        } else {
+                            val session = FFmpegKit.execute("-i $file $outputFile")
+                            if (ReturnCode.isSuccess(session.returnCode)) {
+                                addTrack(outputFile)
+                            } else if (ReturnCode.isCancel(session.returnCode)) {
+                                // CANCEL
+                            } else {
+                                Log.d(
+                                    TAG,
+                                    String.format(
+                                        "Command failed with state %s and rc %s.%s",
+                                        session.state,
+                                        session.returnCode,
+                                        session.failStackTrace
+                                    )
+                                )
+                            }
+                        }
                     }
 //                }
             }
@@ -345,9 +347,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun addTrack(track: File) {
-        val byteArray = track.readBytes()
-        loadTrack(byteArray)
-        audioTracks.add(AudioTrack(track.absolutePath))
+        val trackNum = loadTrack(track.absolutePath)
+        audioTracks.add(AudioTrack(track.absolutePath, trackNum))
     }
 
     @Composable
@@ -389,7 +390,7 @@ class MainActivity : ComponentActivity() {
                             onValueChange = { newVolume ->
                                 volume = newVolume
                                 track.volume = newVolume
-//                                track.player.volume = newVolume
+                                setTrackVolume(track.internalTrackNumber, newVolume)
                             },
                             valueRange = 0f..1f,
                             modifier = Modifier.fillMaxWidth()
@@ -404,8 +405,7 @@ class MainActivity : ComponentActivity() {
                                 val leftVolume = if (newPan < 0) 1f else 1 - newPan
                                 val rightVolume = if (newPan > 0) 1f else 1 + newPan
 
-                                // TODO("Add proper pan support")
-//                                track.player.setVolume(leftVolume * volume)
+                                setTrackPan(track.internalTrackNumber, newPan)
                             },
                             valueRange = -1f..1f,
                             modifier = Modifier.fillMaxWidth()

@@ -21,7 +21,6 @@
 #include "wav/WavStreamReader.h"
 
 // local includes
-#include "OneShotSampleSource.h"
 #include "SimpleMultiPlayer.h"
 
 static const char* TAG = "SimpleMultiPlayer";
