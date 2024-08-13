@@ -25,7 +25,7 @@ using namespace RESAMPLER_OUTER_NAMESPACE::resampler;
 
 namespace iolib {
 
-void SampleBuffer::loadSampleData(parselib::WavStreamReader* reader) {
+void SampleBuffer::loadSampleData(parselib::M4aStreamReader* reader) {
     mAudioProperties.channelCount = reader->getNumChannels();
     mAudioProperties.sampleRate = reader->getSampleRate();
 

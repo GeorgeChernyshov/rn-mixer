@@ -17,7 +17,7 @@
 #ifndef _PLAYER_SAMPLEBUFFER_
 #define _PLAYER_SAMPLEBUFFER_
 
-#include "wav/WavStreamReader.h"
+#include "m4a/M4aStreamReader.h"
 
 namespace iolib {
 
@@ -35,7 +35,7 @@ public:
     ~SampleBuffer() { unloadSampleData(); }
 
     // Data load/unload
-    void loadSampleData(parselib::WavStreamReader* reader);
+    void loadSampleData(parselib::M4aStreamReader* reader);
     void unloadSampleData();
 
     void resampleData(int sampleRate);

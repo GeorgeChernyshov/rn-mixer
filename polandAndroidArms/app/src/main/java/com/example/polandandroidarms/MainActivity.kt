@@ -201,29 +201,30 @@ class MainActivity : ComponentActivity() {
             val deferreds = urls.map { url ->
 //                async {
                     downloadFile(url)?.let { file ->
-                        val i = file.name.lastIndexOf('.')
-                        val substr = file.name.substring(0, i)
-                        val outputFile = File(file.parent, "$substr.wav")
-                        if (outputFile.exists() && outputFile.totalSpace > 0) {
-                            addTrack(outputFile)
-                        } else {
-                            val session = FFmpegKit.execute("-i $file $outputFile")
-                            if (ReturnCode.isSuccess(session.returnCode)) {
-                                addTrack(outputFile)
-                            } else if (ReturnCode.isCancel(session.returnCode)) {
-                                // CANCEL
-                            } else {
-                                Log.d(
-                                    TAG,
-                                    String.format(
-                                        "Command failed with state %s and rc %s.%s",
-                                        session.state,
-                                        session.returnCode,
-                                        session.failStackTrace
-                                    )
-                                )
-                            }
-                        }
+                        addTrack(file)
+//                        val i = file.name.lastIndexOf('.')
+//                        val substr = file.name.substring(0, i)
+//                        val outputFile = File(file.parent, "$substr.wav")
+//                        if (outputFile.exists() && outputFile.totalSpace > 0) {
+//                            addTrack(outputFile)
+//                        } else {
+//                            val session = FFmpegKit.execute("-i $file $outputFile")
+//                            if (ReturnCode.isSuccess(session.returnCode)) {
+//                                addTrack(outputFile)
+//                            } else if (ReturnCode.isCancel(session.returnCode)) {
+//                                // CANCEL
+//                            } else {
+//                                Log.d(
+//                                    TAG,
+//                                    String.format(
+//                                        "Command failed with state %s and rc %s.%s",
+//                                        session.state,
+//                                        session.returnCode,
+//                                        session.failStackTrace
+//                                    )
+//                                )
+//                            }
+//                        }
                     }
 //                }
             }

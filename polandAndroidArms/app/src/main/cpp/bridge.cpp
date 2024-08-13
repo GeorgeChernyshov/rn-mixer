@@ -4,7 +4,7 @@
 #include "sound.h"
 #include "SimpleMultiPlayer.h"
 #include "stream/MemInputStream.h"
-#include "wav/WavStreamReader.h"
+#include "m4a/M4aStreamReader.h"
 #include "SampleBuffer.h"
 #include "SampleSource.h"
 
@@ -39,7 +39,7 @@ Java_com_example_polandandroidarms_MainActivity_loadTrack(JNIEnv *env, jobject t
             env->GetArrayLength(data)
             );
 
-    auto reader = parselib::WavStreamReader(&stream);
+    auto reader = parselib::M4aStreamReader(&stream);
     reader.parse();
     auto buffer = new iolib::SampleBuffer();
     buffer->loadSampleData(&reader);

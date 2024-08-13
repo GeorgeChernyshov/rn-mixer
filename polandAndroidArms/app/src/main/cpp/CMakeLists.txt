@@ -10,6 +10,11 @@ add_library (
         SampleBuffer.cpp
         SampleSource.cpp
         SimpleMultiPlayer.cpp
+        m4a/AudioEncoding.cpp
+        m4a/M4aChunkHeader.cpp
+        m4a/M4aFmtChunkHeader.cpp
+        m4a/M4aRIFFChunkHeader.cpp
+        m4a/M4aStreamReader.cpp
         stream/FileInputStream.cpp
         stream/InputStream.cpp
         stream/MemInputStream.cpp
