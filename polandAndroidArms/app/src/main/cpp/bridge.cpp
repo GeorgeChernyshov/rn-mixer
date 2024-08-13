@@ -30,6 +30,19 @@ Java_com_example_polandandroidarms_MainActivity_preparePlayer(JNIEnv *env, jobje
 }
 
 extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_polandandroidarms_MainActivity_resetPlayer(JNIEnv *env, jobject thiz) {
+    sPlayer.unloadSampleData();
+//    for (int i = 0; i < sources.size(); i++) {
+//        delete sources[i];
+//        delete buffers[i];
+//    }
+
+    sources.clear();
+    buffers.clear();
+}
+
+extern "C"
 JNIEXPORT jint JNICALL
 Java_com_example_polandandroidarms_MainActivity_loadTrack(JNIEnv *env, jobject thiz,
                                                           jstring fileName) {
@@ -43,6 +56,8 @@ Java_com_example_polandandroidarms_MainActivity_loadTrack(JNIEnv *env, jobject t
     auto source = new iolib::OneShotSampleSource(buffer, 1);
     sources.push_back(source);
     sPlayer.addSampleSource(source, buffer);
+
+    close(f);
 
     return buffers.size() - 1;
 }
@@ -75,6 +90,9 @@ Java_com_example_polandandroidarms_MainActivity_resumeAudio(JNIEnv *env, jobject
 extern "C"
 JNIEXPORT jfloat JNICALL
 Java_com_example_polandandroidarms_MainActivity_getCurrentPosition(JNIEnv *env, jobject thiz) {
+    if (sources.empty())
+        return 0;
+
     return sources[0]->getPosition();
 }
 

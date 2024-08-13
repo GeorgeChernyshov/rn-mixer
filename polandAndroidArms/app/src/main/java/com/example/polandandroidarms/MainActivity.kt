@@ -62,20 +62,20 @@ data class AudioTrack(
 class MainActivity : ComponentActivity() {
 
     private val audioFileURLsList: List<URL> = listOf(
-//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/236/original/Way_Maker__0_-_E_-_Original_--_11-Lead_Vox.m4a"),
-//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/227/original/Way_Maker__0_-_E_-_Original_--_3-Drums.m4a"),
-//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/229/original/Way_Maker__0_-_E_-_Original_--_4-Percussion.m4a"),
-//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/232/original/Way_Maker__0_-_E_-_Original_--_5-Bass.m4a"),
-//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/230/original/Way_Maker__0_-_E_-_Original_--_6-Acoustic.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/236/original/Way_Maker__0_-_E_-_Original_--_11-Lead_Vox.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/227/original/Way_Maker__0_-_E_-_Original_--_3-Drums.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/229/original/Way_Maker__0_-_E_-_Original_--_4-Percussion.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/232/original/Way_Maker__0_-_E_-_Original_--_5-Bass.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/230/original/Way_Maker__0_-_E_-_Original_--_6-Acoustic.m4a"),
         URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/226/original/Way_Maker__0_-_E_-_Original_--_1-Click.m4a"),
-//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/228/original/Way_Maker__0_-_E_-_Original_--_2-Guide.m4a"),
-//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/234/original/Way_Maker__0_-_E_-_Original_--_7-Electric_1.m4a"),
-//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/235/original/Way_Maker__0_-_E_-_Original_--_8-Electric_2.m4a"),
-//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/237/original/Way_Maker__0_-_E_-_Original_--_9-Main_Keys.m4a"),
-//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/231/original/Way_Maker__0_-_E_-_Original_--_10-Aux_Keys.m4a"),
-//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/238/original/Way_Maker__0_-_E_-_Original_--_12-Soprano_Vox.m4a"),
-//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/239/original/Way_Maker__0_-_E_-_Original_--_13-Tenor_Vox.m4a"),
-//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/233/original/Way_Maker__0_-_E_-_Original_--_14-Choir.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/228/original/Way_Maker__0_-_E_-_Original_--_2-Guide.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/234/original/Way_Maker__0_-_E_-_Original_--_7-Electric_1.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/235/original/Way_Maker__0_-_E_-_Original_--_8-Electric_2.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/237/original/Way_Maker__0_-_E_-_Original_--_9-Main_Keys.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/231/original/Way_Maker__0_-_E_-_Original_--_10-Aux_Keys.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/238/original/Way_Maker__0_-_E_-_Original_--_12-Soprano_Vox.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/239/original/Way_Maker__0_-_E_-_Original_--_13-Tenor_Vox.m4a"),
+        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/233/original/Way_Maker__0_-_E_-_Original_--_14-Choir.m4a"),
     )
 
     // Remove before release build
@@ -126,7 +126,8 @@ class MainActivity : ComponentActivity() {
     }
 
     external fun testFunction(): Long
-    external fun preparePlayer();
+    external fun preparePlayer()
+    external fun resetPlayer()
     external fun loadTrack(fileName: String): Int
     external fun playAudio()
     external fun pauseAudio()
@@ -174,12 +175,15 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-
-    override fun onStart() {
-        super.onStart()
 
         preparePlayer()
+    }
+
+    override fun onDestroy() {
+        resetPlayer()
+        Util.deleteCache(this)
+
+        super.onDestroy()
     }
 
     private fun handlePlayMix() {
@@ -201,37 +205,39 @@ class MainActivity : ComponentActivity() {
         val scope = CoroutineScope(Dispatchers.IO)
         scope.launch {
             val deferreds = urls.map { url ->
-//                async {
-                    downloadFile(url)?.let { file ->
-//                        addTrack(file)
-                        val i = file.name.lastIndexOf('.')
-                        val substr = file.name.substring(0, i)
-                        val outputFile = File(file.parent, "$substr.wav")
-                        if (outputFile.exists() && outputFile.totalSpace > 0) {
-                            addTrack(outputFile)
-                        } else {
-                            val session = FFmpegKit.execute("-i $file $outputFile")
-                            if (ReturnCode.isSuccess(session.returnCode)) {
-                                addTrack(outputFile)
-                            } else if (ReturnCode.isCancel(session.returnCode)) {
-                                // CANCEL
-                            } else {
-                                Log.d(
-                                    TAG,
-                                    String.format(
-                                        "Command failed with state %s and rc %s.%s",
-                                        session.state,
-                                        session.returnCode,
-                                        session.failStackTrace
-                                    )
-                                )
-                            }
-                        }
-                    }
-//                }
+                async { downloadFile(url) }
             }
 
-//            deferreds.awaitAll()
+            val files = deferreds.awaitAll()
+            files.filterNotNull().forEach { file ->
+                val i = file.name.lastIndexOf('.')
+                val substr = file.name.substring(0, i)
+                val outputFile = File(file.parent, "$substr.wav")
+                if (outputFile.exists() && outputFile.totalSpace > 0) {
+                    addTrack(outputFile)
+                } else {
+                    val session = FFmpegKit.execute("-i $file $outputFile")
+                    if (ReturnCode.isSuccess(session.returnCode)) {
+                        addTrack(outputFile)
+                    } else if (ReturnCode.isCancel(session.returnCode)) {
+                                // CANCEL
+                    } else {
+                        Log.d(
+                            TAG,
+                            String.format(
+                                "Command failed with state %s and rc %s.%s",
+                                session.state,
+                                session.returnCode,
+                                session.failStackTrace
+                            )
+                        )
+                    }
+                }
+
+                downloadedFiles += 1
+                downloadProgress = downloadedFiles.toDouble() / totalFiles
+            }
+
             isMixBtnClicked = true
             downloadProgress = 1.0
         }
@@ -255,9 +261,8 @@ class MainActivity : ComponentActivity() {
     private fun resetApp() {
         // Reset application state
         // Release and clear all media players
-        audioTracks.forEach { track ->
-//            track.player.release()
-        }
+        resetPlayer()
+        Util.deleteCache(this)
         audioTracks.clear()
 
         // Reset download progress
@@ -375,6 +380,9 @@ class MainActivity : ComponentActivity() {
             }
             Button(onClick = { handlePickAudioMix() }) {
                 Text(text = "Pick Audio Mix")
+            }
+            Button(onClick = { resetApp() }) {
+                Text(text = "Reset")
             }
             Text(text = "Download Progress: ${(downloadProgress * 100).toInt()}%")
 
