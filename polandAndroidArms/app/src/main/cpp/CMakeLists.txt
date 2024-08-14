@@ -4,22 +4,11 @@ cmake_minimum_required(VERSION 3.4.1)
 add_library (
         sound
         SHARED
-        sound.cpp
         bridge.cpp
-        FileSource.cpp
         OneShotSampleSource.cpp
         SampleBuffer.cpp
-        SampleSource.cpp
         SimpleMultiPlayer.cpp
-        m4a/AudioEncoding.cpp
-        m4a/M4aChunkHeader.cpp
-        m4a/M4aFmtChunkHeader.cpp
-        m4a/M4aRIFFChunkHeader.cpp
-        m4a/M4aStreamReader.cpp
         stream/FileInputStream.cpp
-        stream/InputStream.cpp
-        stream/MemInputStream.cpp
-        wav/AudioEncoding.cpp
         wav/WavChunkHeader.cpp
         wav/WavFmtChunkHeader.cpp
         wav/WavRIFFChunkHeader.cpp

@@ -17,7 +17,6 @@
 #include <android/log.h>
 
 // parselib includes
-#include "stream/MemInputStream.h"
 #include "wav/WavStreamReader.h"
 
 // local includes

@@ -1,10 +1,9 @@
 #include <jni.h>
 #include <android/log.h>
 
-#include "sound.h"
 #include "SimpleMultiPlayer.h"
 #include "stream/FileInputStream.h"
-#include "m4a/M4aStreamReader.h"
+#include "wav/WavStreamReader.h"
 #include "SampleBuffer.h"
 #include "SampleSource.h"
 
@@ -48,7 +47,7 @@ Java_com_example_polandandroidarms_MainActivity_loadTrack(JNIEnv *env, jobject t
                                                           jstring fileName) {
     auto f = open(env->GetStringUTFChars(fileName, 0), O_RDONLY);
     auto stream = parselib::FileInputStream(f);
-    auto reader = parselib::M4aStreamReader(&stream);
+    auto reader = parselib::WavStreamReader(&stream);
     reader.parse();
     auto buffer = new iolib::SampleBuffer();
     buffer->loadSampleData(&reader);

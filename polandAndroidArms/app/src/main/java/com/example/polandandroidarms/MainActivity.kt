@@ -4,8 +4,6 @@ import android.content.Context
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Bundle
-import android.os.SystemClock
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -27,7 +25,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,9 +34,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.media3.exoplayer.ExoPlayer
-import com.arthenica.ffmpegkit.FFmpegKit
-import com.arthenica.ffmpegkit.ReturnCode
 import com.example.polandandroidarms.ui.theme.PolandAndroidArmsTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,7 +41,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.URL
 
@@ -72,10 +65,10 @@ class MainActivity : ComponentActivity() {
         URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/234/original/Way_Maker__0_-_E_-_Original_--_7-Electric_1.m4a"),
         URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/235/original/Way_Maker__0_-_E_-_Original_--_8-Electric_2.m4a"),
         URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/237/original/Way_Maker__0_-_E_-_Original_--_9-Main_Keys.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/231/original/Way_Maker__0_-_E_-_Original_--_10-Aux_Keys.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/238/original/Way_Maker__0_-_E_-_Original_--_12-Soprano_Vox.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/239/original/Way_Maker__0_-_E_-_Original_--_13-Tenor_Vox.m4a"),
-        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/233/original/Way_Maker__0_-_E_-_Original_--_14-Choir.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/231/original/Way_Maker__0_-_E_-_Original_--_10-Aux_Keys.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/238/original/Way_Maker__0_-_E_-_Original_--_12-Soprano_Vox.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/239/original/Way_Maker__0_-_E_-_Original_--_13-Tenor_Vox.m4a"),
+//        URL("https://cdn.worshiponline.com/estp-public/song_audio_mixer_tracks/audios/000/034/233/original/Way_Maker__0_-_E_-_Original_--_14-Choir.m4a"),
     )
 
     // Remove before release build
@@ -107,7 +100,6 @@ class MainActivity : ComponentActivity() {
     private var isMixBtnClicked by mutableStateOf(false)
     private var isMasterControlShowing by mutableStateOf(false)
     private var playbackProgress by mutableFloatStateOf(0f)
-    private var maxPlaybackDuration by mutableIntStateOf(0)
 
     private val audioManager: AudioManager by lazy {
         getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -152,17 +144,17 @@ class MainActivity : ComponentActivity() {
 
     private fun handleAudioFocusLoss() {
         // Pause or stop playback
-//        audioTracks.forEach { it.player.pause() }
+        pauseAudio()
     }
 
     private fun handleAudioFocusLossTransient() {
         // Pause playback
-//        audioTracks.forEach { it.player.pause() }
+        pauseAudio()
     }
 
     private fun handleAudioFocusGain() {
         // Resume playback
-//        audioTracks.forEach { it.player.play() }
+        resumeAudio()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -195,7 +187,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     private fun handleDownloadTracks(trackURLs: List<URL>) {
         resetApp()
         val urls = trackURLs
@@ -213,26 +204,9 @@ class MainActivity : ComponentActivity() {
                 val i = file.name.lastIndexOf('.')
                 val substr = file.name.substring(0, i)
                 val outputFile = File(file.parent, "$substr.wav")
-                if (outputFile.exists() && outputFile.totalSpace > 0) {
+                if (outputFile.exists() && outputFile.totalSpace > 0)
                     addTrack(outputFile)
-                } else {
-                    val session = FFmpegKit.execute("-i $file $outputFile")
-                    if (ReturnCode.isSuccess(session.returnCode)) {
-                        addTrack(outputFile)
-                    } else if (ReturnCode.isCancel(session.returnCode)) {
-                                // CANCEL
-                    } else {
-                        Log.d(
-                            TAG,
-                            String.format(
-                                "Command failed with state %s and rc %s.%s",
-                                session.state,
-                                session.returnCode,
-                                session.failStackTrace
-                            )
-                        )
-                    }
-                }
+                else Util.convertFile(file, outputFile) { addTrack(it) }
 
                 downloadedFiles += 1
                 downloadProgress = downloadedFiles.toDouble() / totalFiles
@@ -322,33 +296,6 @@ class MainActivity : ComponentActivity() {
 
     private fun handleSeekToProgress(progress: Float) {
         setPosition(progress)
-    }
-
-    private fun logTrackTime(tracks: List<AudioTrack>) {
-        var firstTrackPosition: Long? = null
-        var firstTrackLogTime: Long? = null
-
-        tracks.forEachIndexed { index, track ->
-//            val position = track.player.currentPosition
-//            val currentTime = System.currentTimeMillis()
-//            var logMessage = "Track #$index is at $position. System time is $currentTime."
-//
-//            if (firstTrackLogTime != null && firstTrackPosition != null) {
-//                val positionDesync = position - firstTrackPosition!!
-//                val timeDesync = currentTime - firstTrackLogTime!!
-//                val totalDesync = positionDesync - timeDesync
-//                val totalDesyncString = if (totalDesync > 0)
-//                    "+$totalDesync"
-//                else totalDesync.toString()
-//
-//                logMessage += " Desync is at $totalDesyncString."
-//            } else {
-//                firstTrackPosition = position
-//                firstTrackLogTime = currentTime
-//            }
-//
-//            Log.i(TAG, logMessage)
-        }
     }
 
     private fun addTrack(track: File) {
