@@ -38,10 +38,7 @@ public:
     static constexpr float PAN_HARDRIGHT = 1.0f;
     static constexpr float PAN_CENTER = 0.0f;
 
-    SampleSource(SampleBuffer *sampleBuffer, float pan)
-     : mSampleBuffer(sampleBuffer), mCurSampleIndex(0), mIsPlaying(false), mGain(1.0f) {
-        setPan(pan);
-    }
+    SampleSource(SampleBuffer *sampleBuffer, float pan);
     virtual ~SampleSource() {}
 
     void setPlayMode() { mCurSampleIndex = 0; mIsPlaying = true; }
@@ -89,6 +86,9 @@ protected:
 
     // Overall gain
     float mGain;
+
+    // Max Track Amplitude
+    float mMaxAmplitude = 1;
 
 private:
     void calcGainFactors() {

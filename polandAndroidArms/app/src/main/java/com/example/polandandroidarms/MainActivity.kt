@@ -9,17 +9,28 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderColors
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,8 +42,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.example.polandandroidarms.ui.theme.PolandAndroidArmsTheme
 import kotlinx.coroutines.CoroutineScope
@@ -49,7 +64,8 @@ data class AudioTrack(
     val fileName: String,
     val internalTrackNumber: Int,
     var volume: Float = 1.0f, // Default volume
-    var pan: Float = 0.0f     // Default pan (0 is centered)
+    var pan: Float = 0.0f,    // Default pan (0 is centered)
+    var amplitude: Float = 0.0f
 )
 
 class MainActivity : ComponentActivity() {
@@ -96,6 +112,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private var audioTracks = mutableStateListOf<AudioTrack>()
+    private var amplitudes = mutableStateListOf<Float>()
     private var downloadProgress by mutableDoubleStateOf(0.0)
     private var isMixBtnClicked by mutableStateOf(false)
     private var isMasterControlShowing by mutableStateOf(false)
@@ -125,6 +142,7 @@ class MainActivity : ComponentActivity() {
     external fun pauseAudio()
     external fun resumeAudio()
     external fun getCurrentPosition(): Float
+    external fun getAmplitudes(): Array<Float>
     external fun setPosition(position: Float)
     external fun setTrackVolume(trackNum: Int, volume: Float)
     external fun setTrackPan(trackNum: Int, pan: Float)
@@ -182,6 +200,7 @@ class MainActivity : ComponentActivity() {
         if (requestAudioFocus()) {
             playAudio()
             startPlaybackProgressUpdater()
+            startAmplitudesUpdater()
         } else {
             Toast.makeText(this, "Failed to gain audio focus", Toast.LENGTH_SHORT).show()
         }
@@ -294,6 +313,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun startAmplitudesUpdater() {
+        CoroutineScope(Dispatchers.Main).launch {
+            while (true) {
+                val amps = getAmplitudes()
+                audioTracks.forEachIndexed { index, audioTrack ->
+                    audioTrack.amplitude = amps[index]
+                    amplitudes[index] = amps[index]
+                }
+
+                delay(30) // Update every 30ms
+            }
+        }
+    }
+
     private fun handleSeekToProgress(progress: Float) {
         setPosition(progress)
     }
@@ -301,6 +334,7 @@ class MainActivity : ComponentActivity() {
     private fun addTrack(track: File) {
         val trackNum = loadTrack(track.absolutePath)
         audioTracks.add(AudioTrack(track.absolutePath, trackNum))
+        amplitudes.add(0F)
     }
 
     @Composable
@@ -313,27 +347,61 @@ class MainActivity : ComponentActivity() {
         ) {
             Greeting(name = "Android")
             PlaybackSlider()
-            Button(onClick = { handlePlayMix() }) {
-                Text(text = "Play Mix")
-            }
-            Button(onClick = { handleDownloadTracks(audioFileURLsList) }) {
-                Text(text = "Download Tracks")
-            }
-            Button(onClick = { handleDownloadTracks(audioClicksURLsList) }) {
-                Text(text = "Download Clicks 10 times (good for hearing desync)")
-            }
-            Button(onClick = { handleResumePauseMix() }) {
-                Text(text = "Resume/Pause Mix")
-            }
-            Button(onClick = { handlePickAudioMix() }) {
-                Text(text = "Pick Audio Mix")
-            }
-            Button(onClick = { resetApp() }) {
-                Text(text = "Reset")
-            }
-            Text(text = "Download Progress: ${(downloadProgress * 100).toInt()}%")
+            LazyRow(Modifier.fillMaxWidth()) {
+                itemsIndexed(audioTracks) { index, track ->
+                    val amplitude by remember(amplitudes[index]) {
+                        mutableFloatStateOf(amplitudes[index])
+                    }
 
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    VerticalSlider(
+                        modifier = Modifier.width(100.dp),
+                        value = 0f..amplitude.coerceAtMost(1f),
+                        onValueChange = {},
+                        valueRange = 0f..1f
+                    )
+                }
+            }
+            LazyColumn {
+                item {
+                    Button(onClick = { handlePlayMix() }) {
+                        Text(text = "Play Mix")
+                    }
+                }
+
+                item {
+                    Button(onClick = { handleDownloadTracks(audioFileURLsList) }) {
+                        Text(text = "Download Tracks")
+                    }
+                }
+
+                item {
+                    Button(onClick = { handleDownloadTracks(audioClicksURLsList) }) {
+                        Text(text = "Download Clicks 10 times (good for hearing desync)")
+                    }
+                }
+
+                item {
+                    Button(onClick = { handleResumePauseMix() }) {
+                        Text(text = "Resume/Pause Mix")
+                    }
+                }
+
+                item {
+                    Button(onClick = { handlePickAudioMix() }) {
+                        Text(text = "Pick Audio Mix")
+                    }
+                }
+
+                item {
+                    Button(onClick = { resetApp() }) {
+                        Text(text = "Reset")
+                    }
+                }
+
+                item {
+                    Text(text = "Download Progress: ${(downloadProgress * 100).toInt()}%")
+                }
+
                 itemsIndexed(audioTracks) { index, track ->
                     var volume by remember { mutableFloatStateOf(track.volume) }
                     var pan by remember { mutableFloatStateOf(track.pan) }
@@ -410,6 +478,51 @@ class MainActivity : ComponentActivity() {
         Text(
             text = "Hello $name!",
             modifier = modifier
+        )
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun VerticalSlider(
+        value: ClosedFloatingPointRange<Float>,
+        onValueChange: (ClosedFloatingPointRange<Float>) -> Unit,
+        modifier: Modifier = Modifier,
+        enabled: Boolean = true,
+        valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+        /*@IntRange(from = 0)*/
+        steps: Int = 0,
+        onValueChangeFinished: (() -> Unit)? = null,
+        colors: SliderColors = SliderDefaults.colors()
+    ){
+        RangeSlider(
+            colors = colors,
+            onValueChangeFinished = onValueChangeFinished,
+            steps = steps,
+            valueRange = valueRange,
+            enabled = enabled,
+            value = value,
+            onValueChange = onValueChange,
+            startThumb = {},
+            endThumb = {},
+            modifier = Modifier
+                .graphicsLayer {
+                    rotationZ = 270f
+                    transformOrigin = TransformOrigin(0f, 0f)
+                }
+                .layout { measurable, constraints ->
+                    val placeable = measurable.measure(
+                        Constraints(
+                            minWidth = constraints.minHeight,
+                            maxWidth = constraints.maxHeight,
+                            minHeight = constraints.minWidth,
+                            maxHeight = constraints.maxHeight,
+                        )
+                    )
+                    layout(placeable.height, placeable.width) {
+                        placeable.place(-placeable.width, 0)
+                    }
+                }
+                .then(modifier)
         )
     }
 

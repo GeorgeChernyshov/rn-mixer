@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.polandandroidarms.app-mergeDebugResources-46:/values-v16/values-v16.xml",
+            "outputFile": "com.example.polandandroidarms.app-mergeDebugResources-43:/values-v16/values-v16.xml",
             "map": [
                 {
-                    "source": "/Users/greatarmstrong/.gradle/caches/transforms-4/7980dee923f7b7c9157ec00342eb7aee/transformed/core-1.10.1/res/values-v16/values-v16.xml",
+                    "source": "C:\\Users\\37443\\.gradle\\caches\\transforms-4\\2535850ae5709127e7ba7dca358e042b\\transformed\\core-1.10.1\\res\\values-v16\\values-v16.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

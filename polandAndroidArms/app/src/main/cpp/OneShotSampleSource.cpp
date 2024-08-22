@@ -86,4 +86,26 @@ void OneShotSampleSource::setPosition(float position) {
     mCurSampleIndex = newPosition;
 }
 
+float OneShotSampleSource::getAmplitude() {
+    auto firstIndex = mCurSampleIndex - 2000;
+    auto lastIndex = mCurSampleIndex;
+
+    if (firstIndex < 0) firstIndex = 0;
+
+    if (lastIndex == firstIndex)
+        return 0;
+
+    float unScaledAverage = 0;
+    auto data = mSampleBuffer->getSampleData();
+    for (int i = firstIndex; i < lastIndex; i++) {
+        float f = data[i];
+        if (f < 0) f *= -1;
+        unScaledAverage += f;
+    }
+
+    float scaledAverage = unScaledAverage / mMaxAmplitude;
+
+    return (scaledAverage * mGain) / (float)(lastIndex - firstIndex);
+}
+
 } // namespace wavlib

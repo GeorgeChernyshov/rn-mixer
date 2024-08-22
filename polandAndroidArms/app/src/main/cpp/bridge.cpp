@@ -96,6 +96,28 @@ Java_com_example_polandandroidarms_MainActivity_getCurrentPosition(JNIEnv *env, 
 }
 
 extern "C"
+JNIEXPORT jobjectArray JNICALL
+Java_com_example_polandandroidarms_MainActivity_getAmplitudes(JNIEnv *env, jobject thiz) {
+    auto length = sources.size();
+    auto amplitudesCpp = new float[length];
+    for (int i = 0; i < length; i++) {
+        amplitudesCpp[i] = sources[i]->getAmplitude();
+//        amplitudesCpp[i] = 0.5;
+    }
+
+    auto floatClass = env->FindClass("java/lang/Float");
+    auto amplitudesJava = env->NewObjectArray(length, floatClass, nullptr);
+    jmethodID floatConstructorID = env->GetMethodID(floatClass, "<init>", "(F)V");
+    for(int i = 0; i < length; i++) {
+        auto floatObj = env->NewObject(floatClass, floatConstructorID, amplitudesCpp[i]);
+        env->SetObjectArrayElement(amplitudesJava, i, floatObj);
+    }
+
+    delete[] amplitudesCpp;
+    return amplitudesJava;
+}
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_polandandroidarms_MainActivity_setPosition(JNIEnv *env, jobject thiz,
                                                             jfloat position) {

@@ -17,5 +17,40 @@
 #include "SampleSource.h"
 
 namespace iolib {
-    // for now, all methods of SampleSource are either in-line or pure virtual
+
+SampleSource::SampleSource(SampleBuffer *sampleBuffer, float pan)
+    : mSampleBuffer(sampleBuffer), mCurSampleIndex(0), mIsPlaying(false), mGain(1.0f)
+{
+    setPan(pan);
+
+    // Calculating maximum average amplitude for the track
+    auto data = mSampleBuffer->getSampleData();
+    auto total = mSampleBuffer->getNumSamples();
+    float maxAmplitude = 0;
+
+    // We'll take average for a chunk since that is a good practical approximation
+    int chunkSize = 2048;
+    for (int i = 0; i < total; i+=chunkSize) {
+        // Skipping last chunk to avoid dealing with end-of-data bounds
+        if ((total - i) < chunkSize)
+            continue;
+
+        // Calculate average amplitude for the chunk
+        float averageAmplitude = 0;
+        for (int j = 0; j < chunkSize; j++) {
+            float f = data[i + j];
+            if (f < 0) f *= -1;
+            averageAmplitude += f;
+        }
+
+        averageAmplitude /= (float)chunkSize;
+
+        // Update the max amp if necessary
+        if (averageAmplitude > maxAmplitude)
+            maxAmplitude = averageAmplitude;
+    }
+
+    mMaxAmplitude = maxAmplitude;
+}
+
 }
